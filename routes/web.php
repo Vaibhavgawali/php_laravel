@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\LoginController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -16,4 +17,8 @@ use App\Http\Controllers\ProductController;
 Route::get('/',[ProductController::class,'index'] );
 Route::get('/products',[ProductController::class,'products']);
 Route::get('/contact',[ProductController::class,'contact']);
-Route::get('/login',[ProductController::class,'login']);
+
+Route::get('/login',[LoginController::class,'index']);
+Route::post('/login_check',[LoginController::class,'login']);
+
+Route::get('/register',[RegisterController::class,'index']);

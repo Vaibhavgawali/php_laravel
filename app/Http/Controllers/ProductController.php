@@ -10,6 +10,7 @@ class ProductController extends Controller
    public  function index() {
         return view('home');
     }
+
     public function products(Request $request){
         $search=$request['search']??'';
 
@@ -24,10 +25,10 @@ class ProductController extends Controller
         $data=compact('products','search');
         return view('products')->with($data);
     }
+
     public function contact(){
         return view('contact');
     }
-    public function login(){
-        return view('login');
-    }
+    
+   
 }
