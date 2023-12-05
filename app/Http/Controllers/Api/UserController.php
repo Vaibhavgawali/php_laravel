@@ -13,6 +13,8 @@ use Illuminate\Auth\Events\EmailVerified;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
@@ -24,7 +26,14 @@ class UserController extends Controller
         $validator=Validator::make($request->all(),[
             'name'=>'required|string',
             'email'=>'required|email|unique:users,email',
-            'password'=>'required|'
+            'password'=>[
+                        'required',
+                        Password::min(8)
+                                ->mixedCase()
+                                ->numbers()
+                                ->symbols()
+                                ->uncompromised()
+                    ]
         ]);
 
         if($validator->fails()){
@@ -125,6 +134,68 @@ class UserController extends Controller
         return Response(['message'=>'Unauthorized'],401);
     }
 
+    /**
+     * Upload image image of logged user
+     */
+    public function imageUpload(Request $request):Response
+    {
+        if(Auth::check()){
+
+            $validator=Validator::make($request->all(),[
+                'image'=>'required|image|mimes:jpeg,png,jpg|max:2048'
+            ]);
+
+            if($validator->fails()){
+                return Response(['message' => $validator->errors()],401);
+            } 
+
+            // Save the image to the storage
+            $image=$request->file("image");
+            $imageName=$image->hashName();
+
+            $imagepath= Storage::disk('local')->put('public/images', $image);
+            // $imagepath = $image->storeAs('public/images', $imageName);
+
+            if ($imagepath) {
+
+                // Image is stored
+                $user = Auth::user();
+
+                // Delete the old image
+                if($user->image){
+                    $oldimage=$user->image;
+                    Storage::delete($oldimage);
+                }
+
+                $user->image = $imagepath;
+                $user->save();
+                return Response(['message' => 'Image stored successfully', 'path' => $imagepath]);
+            } else {
+                // Image storage failed
+                return Response(['message' => 'Failed to store image'], 500);
+            }            
+        }
+        return Response(['message'=>'Unauthorized'],401);
+    }
+
+    /**
+     * Delete user
+     */
+    public function deleteUser($id) : Response
+    {
+        if(Auth::check()){
+            $user=User::find($id);
+            
+            if($user){
+                if($user->delete()){
+                    return Response(['message'=>"User deleted successfully"],200);
+                }
+                return Response(['message'=>"Something went wrong !"],500);
+            }
+            return Response(['message'=>"User not found"],404);
+        }
+        return Response(['message'=>'Unauthorized'],401);
+    }
 
     /**
     * Logout user.
@@ -137,6 +208,8 @@ class UserController extends Controller
         
         return Response(['data' => 'User Logout successfully.'],200);
     }
+
+
 
     /**
     * Refresh Token

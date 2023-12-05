@@ -35,6 +35,8 @@ Route::group(['middleware' => 'auth:sanctum'],function(){  //['auth:sanctum','ve
     Route::get('users',[UserController::class,'allUsers']);
     Route::get('logged-user',[UserController::class,'userDetails']);
     Route::get('user/{id}',[UserController::class,'user']);
+    Route::post('image-upload',[UserController::class,'imageUpload']); 
+    Route::delete('delete/{id}',[UserController::class,'deleteUser']);
     Route::get('logout',[UserController::class,'logout']);
     Route::get('refresh-token',[UserController::class,'refreshAuthToken']);
 });
