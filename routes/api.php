@@ -3,6 +3,8 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\UserController;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,6 +31,8 @@ Route::get('/email/verify', [UserController::class,'emailVerified'])->name('veri
 // public routes
 Route::post('register',[UserController::class,'registerUser']);
 Route::post('login',[UserController::class,'loginUser']); 
+
+// Route::post('assign-role/{id}',[UserController::class,'assignRole'])->middleware('role:Admin'); 
                         
 // ptotected routes
 Route::group(['middleware' => 'auth:sanctum'],function(){  //['auth:sanctum','verified']
@@ -39,4 +43,9 @@ Route::group(['middleware' => 'auth:sanctum'],function(){  //['auth:sanctum','ve
     Route::delete('delete/{id}',[UserController::class,'deleteUser']);
     Route::get('logout',[UserController::class,'logout']);
     Route::get('refresh-token',[UserController::class,'refreshAuthToken']);
+});
+
+// by role
+Route::group(['middleware' => ['auth:sanctum','role:Admin']], function () {
+    Route::post('assign-role/{id}',[UserController::class,'assignRole']);     
 });

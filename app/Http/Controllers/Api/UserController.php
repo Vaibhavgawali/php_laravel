@@ -15,6 +15,8 @@ use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class UserController extends Controller
 {
@@ -32,14 +34,15 @@ class UserController extends Controller
                                 ->mixedCase()
                                 ->numbers()
                                 ->symbols()
-                                ->uncompromised()
-                    ]
+                                // ->uncompromised()
+            ],
+            'role'=>'required|in:Candidate,Insurer,Institute'
         ]);
 
         if($validator->fails()){
             return Response(['message' => $validator->errors()],401);
         }   
-
+        // print_r($request->role);die;
         $user=User::create([
             'name'=>$request->name,
             'email'=>$request->email,
@@ -51,11 +54,11 @@ class UserController extends Controller
             // if($user->sendEmailVerificationNotification()){
             //     return Response(['message' => "Email is sent to email"],200);
             // }
+
+            $user->assignRole($request->role); /** assign role to user */
             return Response(['message' => "User created successfully"],200);
         }
-
         return Response(['message' => "Something went wrong"],500);
-
     }
 
     /**
@@ -135,6 +138,43 @@ class UserController extends Controller
     }
 
     /**
+     * Assign Role to user
+     */
+    public function assignRole(Request $request,$user_id) : Response
+    {
+        $validator=Validator::make($request->all(),['role'=>'required|in:Candidate,Insurer,Institute']);
+
+        if($validator->fails()){
+            return Response(['message' => $validator->errors()],401);
+        }
+
+        $new_role=$request->role;
+
+        $user=User::find($user_id);
+        if($user){
+            $role = $user->hasRole($new_role); /** check user has this role */ 
+
+            if(!$role){
+                $roles = $user->getRoleNames(); /** get all roles of user */
+
+                $user->syncRoles([]); /** remove all previous roles */
+                // $user->removeRole($roles); /** remove specific roles */
+
+                $user->assignRole($new_role); /** assign new role to user */
+
+                return Response(['user'=>$user,'message'=>"Role assigned"],200);//'role'=>$user->getRoleNames(),
+            }
+           
+            $permissions = $user->permissions;
+            
+            return Response(['user'=>$user,'role'=>$role,'permissions'=>$permissions,'message'=>"Role assigned"],200);
+        }
+        else{
+            return Response(['message'=>"User not found"],404);
+        }
+    }
+
+    /**
      * Upload image image of logged user
      */
     public function imageUpload(Request $request):Response
@@ -208,8 +248,6 @@ class UserController extends Controller
         
         return Response(['data' => 'User Logout successfully.'],200);
     }
-
-
 
     /**
     * Refresh Token
